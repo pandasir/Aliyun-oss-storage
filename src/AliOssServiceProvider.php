@@ -20,15 +20,6 @@ class AliOssServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //发布配置文件
-        /*
-        if (function_exists('config_path')) {
-            $this->publishes([
-                __DIR__ . '/config/config.php' => config_path('alioss.php'),
-            ], 'config');
-        }
-        */
-
         Storage::extend('oss', function($app, $config)
         {
             $accessId  = $config['access_id'];
@@ -39,6 +30,7 @@ class AliOssServiceProvider extends ServiceProvider
             $ssl       = empty($config['ssl']) ? false : $config['ssl']; 
             $isCname   = empty($config['isCName']) ? false : $config['isCName'];
             $debug     = empty($config['debug']) ? false : $config['debug'];
+            $prefix    = empty($config['app']) ? '' : $config['app'];
 
             $endPoint  = $config['endpoint']; // 默认作为外部节点
             $epInternal= $isCname?$cdnDomain:(empty($config['endpoint_internal']) ? $endPoint : $config['endpoint_internal']); // 内部节点
@@ -46,14 +38,12 @@ class AliOssServiceProvider extends ServiceProvider
             if($debug) Log::debug('OSS config:', $config);
 
             $client  = new OssClient($accessId, $accessKey, $epInternal, $isCname);
-            $adapter = new AliOssAdapter($client, $bucket, $endPoint, $ssl, $isCname, $debug, $cdnDomain);
+            $adapter = new AliOssAdapter($client, $bucket, $endPoint, $ssl, $isCname, $debug, $cdnDomain, $prefix);
 
-            //Log::debug($client);
             $filesystem =  new Filesystem($adapter);
             
             $filesystem->addPlugin(new PutFile());
             $filesystem->addPlugin(new PutRemoteFile());
-            //$filesystem->addPlugin(new CallBack());
             return $filesystem;
         });
     }
